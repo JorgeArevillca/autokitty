@@ -11,9 +11,44 @@ function fancyfier(upper_wallet_address, web3, ck_contract, targeted_traits){
 
 
   function designStages(gen_from, gen_to, cats){
+    var stageList = [];
+    var amount = total_targeted_traits.length;
+    for(var x = gen_from; x < gen_to; x++){
+      var listOfTargetedTraitCombinations = selectTargetTraits(self.total_targeted_traits.length+2);
+
+      for(var y = 0; y < amount; y++){
+        var stage = new Stage()
+      }
+    }
+  }
 
   }
 
+  function selectTargetTraits(amount, traitLevel){
+    var traitCombos = [];
+
+    var length = total_targeted_traits.length;
+
+    for(var y = 0; y < amount; y++){
+      if(traitLevel == 0){
+        traitCombo = [total_targeted_traits[y%length],total_targeted_traits[(y+1)%length]];
+        traitCombos.push(traitCombo);
+
+      } else if (traitLevel == 1){
+        traitCombo = [total_targeted_traits[y%length],total_targeted_traits[(y+1)%length],total_targeted_traits[(y+2)%length]];
+
+        traitCombos.push(traitCombo);
+
+      } else if (traitLevel == 2){
+
+        traitCombo = [total_targeted_traits[y%length],total_targeted_traits[(y+1)%length],total_targeted_traits[(y+2)%length],total_targeted_traits[(y+3)%length]];
+        traitCombos.push(traitCombo);
+
+      }
+
+    }
+
+    return traitCombos;
   }
   function designStage(threshold, generation, cats){
 
