@@ -1,27 +1,45 @@
 var GeneDecoder = require("genedecoder")();
 var Comparators = require("ak-comparators");
+
 function fancyfier(upper_wallet_address, web3, ck_contract, targeted_traits){
   self = {};
   self.total_targeted_traits = targeted_traits;
   self.current_targeted_traits = self.total_targeted_traits;
 
+  var Breeder = require("breeder")(upper_wallet_address, web3, ck_contract);
+
+  threshold = 0.22;
+
   function isOneDominantOrTwoR1(value){
     return value >= 0.22;
   }
 
+  function main(gen_from, gen_to, cats){
+    var stageList = designStages(gen_from, gen_to, cats);
+
+    for(var stage in stageList){
+      stage = stageList[stage];
+      var breedingPairs = stage.solve();
+
+      Breeder._triggerBreedingPairs(breedingPairs);
+    }
+  }
 
   function designStages(gen_from, gen_to, cats){
     var stageList = [];
     var amount = total_targeted_traits.length;
+    var counter = 0;
     for(var x = gen_from; x < gen_to; x++){
-      var listOfTargetedTraitCombinations = selectTargetTraits(self.total_targeted_traits.length+2);
+      var listOfTargetedTraitCombinations = selectTargetTraits(self.total_targeted_traits.length+2-counter, counter);
 
       for(var y = 0; y < amount; y++){
-        var stage = new Stage()
+        var generationFilteredCats = catGenerationFilter(cats, x);
+        var stage = new Stage(x, generationFilteredCats, listOfTargetedTraitCombinations[y], threshold);
+        stageList.push(stage);
       }
+      counter += 1;
     }
-  }
-
+    return stageList;
   }
 
   function selectTargetTraits(amount, traitLevel){
@@ -50,9 +68,7 @@ function fancyfier(upper_wallet_address, web3, ck_contract, targeted_traits){
 
     return traitCombos;
   }
-  function designStage(threshold, generation, cats){
 
-  }
 
   function Stage(generation, cats, current_targeted_traits, threshold){
     this.generation = generation;
