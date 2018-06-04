@@ -836,8 +836,9 @@ function GeneDecoder(){
 			//if(!isEmptyObject(traitChances)){
 			//	console.log(traitChances);
 			//}
-			kitten.chanceOfTrait = traitChances;
 		}
+		kitten.chanceOfTrait = traitChances;
+		
 		return kitten;
 	}
 	self.notUnknownGroup = function(number){
