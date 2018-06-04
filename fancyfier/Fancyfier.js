@@ -6,6 +6,8 @@ function fancyfier(upper_wallet_address, web3, ck_contract, targeted_traits){
   self.total_targeted_traits = targeted_traits;
   self.current_targeted_traits = self.total_targeted_traits;
 
+  //Needs to be global to avoid conflicts
+  self.usedCats = [];
   var Breeder = require("breeder")(upper_wallet_address, web3, ck_contract);
 
   threshold = 0.22;
@@ -23,6 +25,12 @@ function fancyfier(upper_wallet_address, web3, ck_contract, targeted_traits){
 
       Breeder._triggerBreedingPairs(breedingPairs);
     }
+  }
+
+  function BreedingPair(id1, id2, score){
+    this.id1 = id1;
+    this.id2 = id2;
+    this.score = score;
   }
 
   function designStages(gen_from, gen_to, cats){
@@ -84,24 +92,37 @@ function fancyfier(upper_wallet_address, web3, ck_contract, targeted_traits){
     this.threshold = threshold;
     this.current_targeted_traits = current_targeted_traits;
     this.threshold_modified = threshold+(0.05*generation);
+    this.breedingPairs = [];
+
+    this.resetStage = function(){
+      this.breedingPairs = [];
+    }
 
     this.solve = function(){
       var listOfScoredCats = scoreAllCats(this.cats, this.threshold);
       var listOfScoredCats = listOfScoredCats.filter(function (el) {
         return el.score > this.threshold_modified;
       });
-      var potentialCatPartners = this.cats.slice();
+      var potentialCatPartners = listOfScoredCats.slice();
       for(var cat in listOfScoredCats){
         cat = cats[cat];
         missingTraits = getMissingTraits(cat, this.current_targeted_traits);
         topList = createSingleTopList(potentialCatPartners);
         for(var partnerCat in topList){
           partnerCat = topList[partnerCat];
-          scoredCat = scoreCat(partnerCat, this.threshold_modified, this.current_targeted_traits);
-          if(traitRequirementsMet())
+          if(traitRequirementsMet(cat, partnerCat, this.current_targeted_traits, this.threshold_modified)){
+            if(isValidMatch(cat, partnerCat, self.usedCats)){
+              var breedingPair = decideParentRoles(cat, partnerCat, self.catDictionary)
+              this.breedingPairs.push(breedingPair);
+              self.usedCats.push(cat.id);
+              self.usedCats.push(partnerCat.id);
+
+            }
+          }
         }
 
       }
+      return this.breedingPairs;
     }
   }
 
@@ -217,4 +238,49 @@ function fancyfier(upper_wallet_address, web3, ck_contract, targeted_traits){
 
     return true;
   }
+
+  function eitherCatIsBriskOrBetter(catA, catB){
+    return true;
+    if(self.brisk){
+      return ((catA.cooldownIndex <= 7) || (catB.cooldownIndex <= 7));
+
+    } else {
+      return true;
+    }
+    //return true;
+  }
+
+  //Takes two cats and compares their matrons and sires. Depends on the last gotten info from calling the
+  //contracts "getKitten" function
+  function isRelated(catA,catB){
+    var isRelated = ((catA.matronId == catB.matronId) || (catA.sireId == catB.sireId));
+    var isRelatedB = ((catA.matronId == catB.sireId) || (catB.matronId == catA.sireId) || (catA.sireId == catB.matronId) || (catB.sireId == catA.matronId));
+    isRelated = isRelated || isRelatedB;
+    if(catA.generation == 0 && catB.generation == 0){
+      isRelated = false;
+    }
+    return isRelated;
+  }
+
+  function isValidMatch(catA, catB, usedCats){
+    if(!(isRelated(catA, catB))){
+
+      if(!usedCats.includes(catB.id)){
+
+        if(eitherCatIsBriskOrBetter(catA, catB)){
+          return true;
+        } else {
+          console.log("Was not either brisk or better?");
+        }
+      } else {
+        console.log("was used cat?");
+      }
+    } else {
+      console.log("was related?");
+    }
+
+    return false;
+
+  }
+
 }
